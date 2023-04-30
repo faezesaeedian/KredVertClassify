@@ -30,7 +30,7 @@ model:
 trainer:
   training_type: "single_task" # single_task or multi-task
   task: "vert_classify" # task should be within: user2item, item2item, vert_classify, pop_predict
-  extension: "base_line" #it should be within: base_line, extension1, extension2, extension3
+  extension: "base_line" #it should be within: base_line, sentence_transformer_XLM, sentence_transformer_Roberta, image_feature, sentiment
   epochs: 50
   smooth_lamda: 10
   train_neg_num: 4
