@@ -349,7 +349,12 @@ def build_news_features_mind(config):
     #deal with doc feature
     entity_type_dict = {}
     entity_type_index = 1
-    model = SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
+    if config['trainer']['extension'] == "base_line":
+        model = SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
+    elif config['trainer']['extension'] == "sentence_transformer_Roberta":
+        model = SentenceTransformer ('roberta-base-nli-stsb-mean-tokens')
+    elif config['trainer']['extension'] == "sentence_transformer_XLM":
+        model = SentenceTransformer('xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
     for news in news_feature_dict:
         sentence_embedding = model.encode(news_feature_dict[news][0])
         news_entity_feature_list = []
