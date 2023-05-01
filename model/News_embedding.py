@@ -8,6 +8,10 @@ class News_embedding(nn.Module):
     def __init__(self, config, doc_feature_dict, entity_embedding, relation_embedding, adj_entity, adj_relation, entity_num, position_num, type_num):
         super(News_embedding, self).__init__()
         self.config = config
+        if self.config['trainer']['extension'] == "image_feature":
+            self.extension = "image"
+        elif self.config['trainer']['extension'] == "sentiment":
+            self.extension = "sentiment"
         self.doc_feature_dict = doc_feature_dict
         self.adj_entity = adj_entity
         self.adj_relation = adj_relation
@@ -17,12 +21,13 @@ class News_embedding(nn.Module):
         self.position_num = position_num
         self.type_num = type_num
         
-        if config['trainer']['extension'] == "base_line":
-            self.final_embedding1 = nn.Linear(self.config['model']['document_embedding_dim']+ self.config['model']['embedding_dim'], self.config['model']['layer_dim'])
+  
         if config['trainer']['extension'] == "image_feature":
            self.final_embedding1 = nn.Linear(self.config['model']['document_embedding_dim']+ self.config['model']['embedding_dim'] + 100, self.config['model']['layer_dim'])
-        if config['trainer']['extension'] == "sentiment":
+        elif config['trainer']['extension'] == "sentiment":
             self.final_embedding1 = nn.Linear(self.config['model']['document_embedding_dim']+ self.config['model']['embedding_dim'] + 2, self.config['model']['layer_dim'])
+        else:
+            self.final_embedding1 = nn.Linear(self.config['model']['document_embedding_dim']+ self.config['model']['embedding_dim'], self.config['model']['layer_dim'])
             
         self.final_embedding2 = nn.Linear(self.config['model']['layer_dim'],
                                           self.config['model']['embedding_dim'])
@@ -167,16 +172,15 @@ class News_embedding(nn.Module):
         type_embedding = self.type_embeddings(torch.tensor(type).cuda())
         return type_embedding
 
-
-    def forward(self, news_id):
+    def forward(self,news_id):
         entities = self.get_entities_ids(news_id)
         entity_nums = self.get_entities_nums(news_id)
         istitle = self.get_position(news_id)
         type = self.get_type(news_id)
         context_vecs = self.get_context_vector(news_id)
-        if config['trainer']['extension'] == "image_feature":
+        if self.extension == "image":
             image_feature = self.get_image_feature(news_id)     #####extension2
-        if config['trainer']['extension'] == "sentiment":
+        if self.extension == "sentiment":
             sentiment_vecs = self.get_sentiment_vector(news_id) #####extension3
 
         entity_num_embedding = self.get_entity_num_embedding(entity_nums)
@@ -187,12 +191,12 @@ class News_embedding(nn.Module):
 
         aggregate_embedding, topk_index = self.attention_layer(news_entity_embedding, torch.FloatTensor(context_vecs).cuda())
 
-        if config['trainer']['extension'] == "base_line":
-            concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda()], len(aggregate_embedding.shape) - 1)
-        elif config['trainer']['extension'] == "image_feature":
+        if self.extension == "image":
             concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda(), torch.FloatTensor(image_feature).cuda()], len(aggregate_embedding.shape) - 1)
-        elif config['trainer']['extension'] == "sentiment":
+        elif self.extension == "sentiment":
             concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda(), torch.FloatTensor(sentiment_vecs).cuda()], len(aggregate_embedding.shape) - 1)
+        else:
+            concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda()], len(aggregate_embedding.shape) - 1)
             
         news_embeddings = self.tanh(self.final_embedding2(self.relu(self.final_embedding1(concat_embedding))))
 
