@@ -15,7 +15,7 @@ data:
   relation_embedding : "./data/kg/wikidata-graph/relation2vecd100.vec"
   entity_index : "./data/kg/wikidata-graph/entity2id.txt"
   relation_index : "./data/kg/wikidata-graph/realtion2id.txt"
-  image_features : "./vgg_features.txt"
+  image_features : "./vgg_features.zip"
 
 
 model:
