@@ -12,6 +12,8 @@ class News_embedding(nn.Module):
             self.extension = "image"
         elif self.config['trainer']['extension'] == "sentiment":
             self.extension = "sentiment"
+        else:
+            self.extension = "None"
         self.doc_feature_dict = doc_feature_dict
         self.adj_entity = adj_entity
         self.adj_relation = adj_relation
@@ -195,7 +197,7 @@ class News_embedding(nn.Module):
             concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda(), torch.FloatTensor(image_feature).cuda()], len(aggregate_embedding.shape) - 1)
         elif self.extension == "sentiment":
             concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda(), torch.FloatTensor(sentiment_vecs).cuda()], len(aggregate_embedding.shape) - 1)
-        else:
+        elif self.extension == "None":
             concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda()], len(aggregate_embedding.shape) - 1)
             
         news_embeddings = self.tanh(self.final_embedding2(self.relu(self.final_embedding1(concat_embedding))))
