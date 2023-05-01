@@ -329,7 +329,10 @@ def build_user_history(config):
 
 def build_news_features_mind(config):
     #####create dictionary of image features(Extension2):
-    with open(config['data']['image_features'], 'r') as f:
+    with zipfile.ZipFile(config['data']['image_features'], 'r') as zip_ref:
+        zip_ref.extractall('./')
+        
+    with open('./vgg_features.txt', 'r') as f:
         lines = f.readlines()
     image_features = {}
     for line in lines:
