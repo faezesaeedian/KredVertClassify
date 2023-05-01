@@ -362,12 +362,12 @@ def build_news_features_mind(config):
     #deal with doc feature
     entity_type_dict = {}
     entity_type_index = 1
-    if config['trainer']['extension'] == "base_line":
-        model = SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
-    elif config['trainer']['extension'] == "sentence_transformer_Roberta":
+    if config['trainer']['extension'] == "sentence_transformer_Roberta":
         model = SentenceTransformer ('roberta-base-nli-stsb-mean-tokens')
     elif config['trainer']['extension'] == "sentence_transformer_XLM":
         model = SentenceTransformer('xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
+    else:
+        model = SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
     ###sentiment analysis model(Extension3)
     sentiment_model = pipeline('sentiment-analysis', max_length= 500)
     for news in news_feature_dict:
@@ -410,14 +410,7 @@ def build_news_features_mind(config):
         else:
             for i in range(len(news_entity_feature_list), config['model']['news_entity_num']):
                 news_entity_feature_list.append([0, 0, 0, 0])
-        if config['trainer']['extension'] == "base_line":
-            news_feature_list_ins = [[],[],[],[],[]]
-            for i in range(len(news_entity_feature_list)):
-                for j in range(4):
-                    news_feature_list_ins[j].append(news_entity_feature_list[i][j])
-            news_feature_list_ins[4] = sentence_embedding
-            news_features[news] = news_feature_list_ins
-        elif config['trainer']['extension'] == "sentiment":
+        if config['trainer']['extension'] == "sentiment":
             news_feature_list_ins = [[],[],[],[],[],[]]
             for i in range(len(news_entity_feature_list)):
                 for j in range(4):
@@ -433,15 +426,15 @@ def build_news_features_mind(config):
             news_feature_list_ins[4] = sentence_embedding
             news_feature_list_ins[5] = vgg_feature
             news_features[news] = news_feature_list_ins
-            
-    if config['trainer']['extension'] == "base_line":
-        news_features["N0"] = [[],[],[],[],[]]
-        for i in range(config['model']['news_entity_num']):
-            for j in range(4):
-                news_features["N0"][j].append(0)
-        news_features["N0"][4] = np.zeros(config['model']['document_embedding_dim'])
+        else:
+            news_feature_list_ins = [[],[],[],[],[]]
+            for i in range(len(news_entity_feature_list)):
+                for j in range(4):
+                    news_feature_list_ins[j].append(news_entity_feature_list[i][j])
+            news_feature_list_ins[4] = sentence_embedding
+            news_features[news] = news_feature_list_ins
         
-    elif config['trainer']['extension'] == "sentiment":
+    if config['trainer']['extension'] == "sentiment":
         news_features["N0"] = [[],[],[],[],[],[]]
         for i in range(config['model']['news_entity_num']):
             for j in range(4):
@@ -456,6 +449,12 @@ def build_news_features_mind(config):
                 news_features["N0"][j].append(0)
         news_features["N0"][4] = np.zeros(config['model']['document_embedding_dim'])
         news_features["N0"][5] = np.zeros(100)
+    else:
+        news_features["N0"] = [[],[],[],[],[]]
+        for i in range(config['model']['news_entity_num']):
+            for j in range(4):
+                news_features["N0"][j].append(0)
+        news_features["N0"][4] = np.zeros(config['model']['document_embedding_dim'])
             
     return news_features, 100, 10, 100
 
@@ -705,7 +704,3 @@ def load_data_mind(config):
         return user_history, entity_embedding, relation_embedding, entity_adj, relation_adj, news_feature, max_entity_freq, max_entity_pos, max_entity_type, pop_train, pop_test
     else:
         print("task error, please check config")
-
-
-
-
