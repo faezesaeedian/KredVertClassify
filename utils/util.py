@@ -425,7 +425,7 @@ def build_news_features_mind(config):
             news_feature_list_ins[4] = sentence_embedding
             news_feature_list_ins[5] = sentiment_embedding
             news_features[news] = news_feature_list_ins
-         elif config['trainer']['extension'] == "image_feature":
+        elif config['trainer']['extension'] == "image_feature":
             news_feature_list_ins = [[],[],[],[],[],[]]
             for i in range(len(news_entity_feature_list)):
                 for j in range(4):
