@@ -330,12 +330,11 @@ def build_user_history(config):
 def build_news_features_mind(config):
     #####create dictionary of image features(Extension2):
     with open(config['data']['image_features'], 'r') as f:
-      lines = f.readlines()
+        lines = f.readlines()
     image_features = {}
-    for i in range(0, len(lines), 2):
-      line = lines[i]
-      key, value = line.split('\t')
-      image_features[key] = value
+    for line in lines:
+        key, value = line.split('\t')
+        image_features[key] = value
     
     entity2id_dict = {}
     fp_entity2id = open(config['data']['entity_index'], 'r', encoding='utf-8')
