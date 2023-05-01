@@ -8,6 +8,8 @@ from pathlib import Path
 from itertools import repeat
 from collections import OrderedDict
 from sentence_transformers import SentenceTransformer
+import gensim.downloader as api
+from transformers import pipeline, RobertaTokenizer
 import requests
 import math
 import zipfile
@@ -327,8 +329,7 @@ def build_user_history(config):
 
 def build_news_features_mind(config):
     #####create dictionary of image features(Extension2):
-    file_path = "./data/image_features_all.txt"
-    with open(file_path, 'r') as f:
+    with open(config['data']['image_features'], 'r') as f:
       lines = f.readlines()
     image_features = {}
     for i in range(0, len(lines), 2):
