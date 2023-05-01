@@ -16,8 +16,14 @@ class News_embedding(nn.Module):
         self.entity_num = entity_num
         self.position_num = position_num
         self.type_num = type_num
-
-        self.final_embedding1 = nn.Linear(self.config['model']['document_embedding_dim']+ self.config['model']['embedding_dim'], self.config['model']['layer_dim'])
+        
+        if config['trainer']['extension'] == "base_line":
+            self.final_embedding1 = nn.Linear(self.config['model']['document_embedding_dim']+ self.config['model']['embedding_dim'], self.config['model']['layer_dim'])
+        if config['trainer']['extension'] == "image_feature":
+           self.final_embedding1 = nn.Linear(self.config['model']['document_embedding_dim']+ self.config['model']['embedding_dim'] + 100, self.config['model']['layer_dim'])
+        if config['trainer']['extension'] == "sentiment":
+            self.final_embedding1 = nn.Linear(self.config['model']['document_embedding_dim']+ self.config['model']['embedding_dim'] + 2, self.config['model']['layer_dim'])
+            
         self.final_embedding2 = nn.Linear(self.config['model']['layer_dim'],
                                           self.config['model']['embedding_dim'])
         self.relu = nn.ReLU(inplace=True)
@@ -124,6 +130,29 @@ class News_embedding(nn.Module):
                 for news_i in news:
                     context_vectors[-1].append(self.doc_feature_dict[news_i][4])
         return context_vectors
+    
+    def get_sentiment_vector(self, news_id):
+        sentiment_vectors = []
+        for news in news_id:
+            if type(news) == str:
+                sentiment_vectors.append(self.doc_feature_dict[news][5])
+            else:
+                sentiment_vectors.append([])
+                for news_i in news:
+                    sentiment_vectors[-1].append(self.doc_feature_dict[news_i][5])
+        return sentiment_vectors
+    
+    def get_image_feature(self, news_id):
+        image_feature = []
+        for news in news_id:
+            if type(news) == str:
+                image_feature.append(self.doc_feature_dict[news][5])
+            else:
+                image_feature.append([])
+                for news_i in news:
+                    image_feature[-1].append(self.doc_feature_dict[news_i][5])
+        return image_feature
+    
 
     def get_entity_num_embedding(self, entity_nums):
         entity_num_embedding = self.entity_num_embeddings(torch.tensor(entity_nums).cuda())
@@ -145,6 +174,10 @@ class News_embedding(nn.Module):
         istitle = self.get_position(news_id)
         type = self.get_type(news_id)
         context_vecs = self.get_context_vector(news_id)
+        if config['trainer']['extension'] == "image_feature":
+            image_feature = self.get_image_feature(news_id)     #####extension2
+        if config['trainer']['extension'] == "sentiment":
+            sentiment_vecs = self.get_sentiment_vector(news_id) #####extension3
 
         entity_num_embedding = self.get_entity_num_embedding(entity_nums)
         istitle_embedding = self.get_title_embedding(istitle)
@@ -154,8 +187,13 @@ class News_embedding(nn.Module):
 
         aggregate_embedding, topk_index = self.attention_layer(news_entity_embedding, torch.FloatTensor(context_vecs).cuda())
 
-        concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda()],
-                                    len(aggregate_embedding.shape) - 1)
+        if config['trainer']['extension'] == "base_line":
+            concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda()], len(aggregate_embedding.shape) - 1)
+        elif config['trainer']['extension'] == "image_feature":
+            concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda(), torch.FloatTensor(image_feature).cuda()], len(aggregate_embedding.shape) - 1)
+        elif config['trainer']['extension'] == "sentiment":
+            concat_embedding = torch.cat([aggregate_embedding, torch.FloatTensor(context_vecs).cuda(), torch.FloatTensor(sentiment_vecs).cuda()], len(aggregate_embedding.shape) - 1)
+            
         news_embeddings = self.tanh(self.final_embedding2(self.relu(self.final_embedding1(concat_embedding))))
 
         return news_embeddings, topk_index
