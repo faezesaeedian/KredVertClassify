@@ -326,6 +326,16 @@ def build_user_history(config):
     return user_history_dict
 
 def build_news_features_mind(config):
+    #####create dictionary of image features(Extension2):
+    file_path = "./data/image_features_all.txt"
+    with open(file_path, 'r') as f:
+      lines = f.readlines()
+    image_features = {}
+    for i in range(0, len(lines), 2):
+      line = lines[i]
+      key, value = line.split('\t')
+      image_features[key] = value
+    
     entity2id_dict = {}
     fp_entity2id = open(config['data']['entity_index'], 'r', encoding='utf-8')
     entity_num = int(fp_entity2id.readline().split('\n')[0])
@@ -355,8 +365,21 @@ def build_news_features_mind(config):
         model = SentenceTransformer ('roberta-base-nli-stsb-mean-tokens')
     elif config['trainer']['extension'] == "sentence_transformer_XLM":
         model = SentenceTransformer('xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
+    ###sentiment analysis model(Extension3)
+    sentiment_model = pipeline('sentiment-analysis', max_length= 500)
     for news in news_feature_dict:
         sentence_embedding = model.encode(news_feature_dict[news][0])
+        #####image features(Extension2):
+        if config['trainer']['extension'] == "image_feature":
+            vgg_feature = json.loads(image_features[news])
+        #####configure the sentiment model(Extantion3):
+        if config['trainer']['extension'] == "sentiment":
+            sentiment_label = sentiment_model(news_feature_dict[news][0])[0]['label']
+            if sentiment_label == 'NEGATIVE':
+                sentiment_embedding = [0, 1]
+            else:
+                sentiment_embedding = [1, 0]
+  
         news_entity_feature_list = []
         title_entity_json = json.loads(news_feature_dict[news][1])
         abstract_entity_json = json.loads(news_feature_dict[news][2])
@@ -384,17 +407,53 @@ def build_news_features_mind(config):
         else:
             for i in range(len(news_entity_feature_list), config['model']['news_entity_num']):
                 news_entity_feature_list.append([0, 0, 0, 0])
-        news_feature_list_ins = [[],[],[],[],[]]
-        for i in range(len(news_entity_feature_list)):
+        if config['trainer']['extension'] == "base_line":
+            news_feature_list_ins = [[],[],[],[],[]]
+            for i in range(len(news_entity_feature_list)):
+                for j in range(4):
+                    news_feature_list_ins[j].append(news_entity_feature_list[i][j])
+            news_feature_list_ins[4] = sentence_embedding
+            news_features[news] = news_feature_list_ins
+        elif config['trainer']['extension'] == "sentiment":
+            news_feature_list_ins = [[],[],[],[],[],[]]
+            for i in range(len(news_entity_feature_list)):
+                for j in range(4):
+                    news_feature_list_ins[j].append(news_entity_feature_list[i][j])
+            news_feature_list_ins[4] = sentence_embedding
+            news_feature_list_ins[5] = sentiment_embedding
+            news_features[news] = news_feature_list_ins
+         elif config['trainer']['extension'] == "image_feature":
+            news_feature_list_ins = [[],[],[],[],[],[]]
+            for i in range(len(news_entity_feature_list)):
+                for j in range(4):
+                    news_feature_list_ins[j].append(news_entity_feature_list[i][j])
+            news_feature_list_ins[4] = sentence_embedding
+            news_feature_list_ins[5] = vgg_feature
+            news_features[news] = news_feature_list_ins
+            
+    if config['trainer']['extension'] == "base_line":
+        news_features["N0"] = [[],[],[],[],[]]
+        for i in range(config['model']['news_entity_num']):
             for j in range(4):
-                news_feature_list_ins[j].append(news_entity_feature_list[i][j])
-        news_feature_list_ins[4] = sentence_embedding
-        news_features[news] = news_feature_list_ins
-    news_features["N0"] = [[],[],[],[],[]]
-    for i in range(config['model']['news_entity_num']):
-        for j in range(4):
-            news_features["N0"][j].append(0)
-    news_features["N0"][4] = np.zeros(config['model']['document_embedding_dim'])
+                news_features["N0"][j].append(0)
+        news_features["N0"][4] = np.zeros(config['model']['document_embedding_dim'])
+        
+    elif config['trainer']['extension'] == "sentiment":
+        news_features["N0"] = [[],[],[],[],[],[]]
+        for i in range(config['model']['news_entity_num']):
+            for j in range(4):
+                news_features["N0"][j].append(0)
+        news_features["N0"][4] = np.zeros(config['model']['document_embedding_dim'])
+        news_features["N0"][5] = np.zeros(2)
+    
+    elif config['trainer']['extension'] == "image_feature":
+        news_features["N0"] = [[],[],[],[],[],[]]
+        for i in range(config['model']['news_entity_num']):
+            for j in range(4):
+                news_features["N0"][j].append(0)
+        news_features["N0"][4] = np.zeros(config['model']['document_embedding_dim'])
+        news_features["N0"][5] = np.zeros(100)
+            
     return news_features, 100, 10, 100
 
 def construct_adj_mind(config):#graph is triple
