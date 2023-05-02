@@ -21,7 +21,7 @@ Second, we incorporate image data from V-MIND, which is an extended version of t
 
 Third and last, we use a semantic analysis extension to evaluate if the news has a positive or negative context. This feature is helpful as it can further improve the accuracy of the sentiment analysis and lead to better recommendation results.
 
-new parameter, named 'extension' is added to the config, that define the type of extension. default is KREd(without applying any extension)
+new parameter, named 'extension' is added to the config, that define the type of extension. default is KREd. (without applying any extension)
 
 ```
 $ python main.py  (this will run KRED for vert_classify single task training set by default parameters)
