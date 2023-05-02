@@ -4,7 +4,7 @@ This repository is the implementation of [KRED: Knowledge-Aware Document Represe
 
 ## Model description
 
-![](./framework.png)
+![](./framework1.png)
 
 KRED is a knowledge enhanced framework which enhance a document embedding with knowledge information for multiple news recommendation tasks. The framework mainly contains two part: representation enhancement part(left) and multi-task training part(right).
 
